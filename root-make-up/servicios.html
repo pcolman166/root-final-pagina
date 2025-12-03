@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+      <link rel="icon" href="imagenes/logotipopag.png" type="image/png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Root MakeUp: Aprende maquillaje profesional con cursos online, horarios flexibles y certificados digitales.">
+    <script src="https://kit.fontawesome.com/b76b6f41c6.js" crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <title>Servicios | Root MakeUP</title>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <img id="Root MakeUp Logo" src="imagenes/logotransparente.png" alt="Root Pro Make Up" loading="lazy">
+            </div>
+            <button class="menu-toggle" aria-label="Abrir menú">&#9776;</button>
+            <nav>
+                <ul class="content">
+                    <li><a href="index.html" id="page_item">Inicio</a></li>
+                    <li><a href="cursos.html" id="page_item">Cursos</a></li>
+                    <li><a href="servicios.html" id="page_item">Servicios</a></li>
+                    <li><a href="sobremi.html" id="page_item">Sobre Mi</a></li>
+                    <li><a href="contacto.html" id="page_item">Contacto</a></li>
+                    <li class="menu-cuenta">
+                        <a href="#" id="page_item">Mi cuenta
+                            <span class="arrow">▼</span>
+                        </a>
+                        <ul id="submenu">
+                            <li class="submenu_item"><a href="login.html">Iniciar Sesión</a></li>
+                            <li class="submenu_item"><a href="login.html">Registrarse</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section class="servicios-grid container">
+
+        <div class="servicio-card" onclick="abrirGaleria('novias')" style="cursor: pointer;">
+            <img src="imagenes/cursos/fotos/novia (3).jpeg" alt="Maquillaje de Novia">
+            <div class="servicio-overlay">
+                <h4>Bodas</h4>
+            </div>
+        </div>
+
+        <div class="servicio-card" onclick="abrirGaleria('quinceaneras')" style="cursor: pointer;">
+            <img src="imagenes/cursos/fotos/15.jpg" alt="Maquillaje de Quinceañera">
+            <div class="servicio-overlay">
+                <h4>Quinceañeras</h4>
+            </div>
+        </div>
+
+        <div class="servicio-card" onclick="abrirGaleria('social')" style="cursor: pointer;">
+            <img src="imagenes/cursos/fotos/social.JPG" alt="Maquillaje Social">
+            <div class="servicio-overlay">
+                <h4>Social</h4>
+            </div>
+        </div>
+        
+        <div class="servicio-card" onclick="abrirGaleria('campana')" style="cursor: pointer;">
+            <img src="imagenes/cursos/fotos/Campaña .JPG" alt="Maquillaje para Campañas y Editoriales">
+            <div class="servicio-overlay">
+                <h4>Campaña</h4>
+            </div>
+        </div>
+
+        <div class="servicio-card" onclick="abrirGaleria('artistico')" style="cursor: pointer;">
+            <img src="imagenes/cursos/fotos/artistico.jpg" alt="Maquillaje Artístico">
+            <div class="servicio-overlay">
+                <h4>Artístico</h4>
+            </div>
+        </div>
+        
+        <div class="servicio-card" onclick="abrirGaleria('trabajo')" style="cursor: pointer;">
+            <img src="imagenes/cursos/fotos/novia.JPG" alt="Trabajos y Colaboraciones">
+            <div class="servicio-overlay">
+                <h4>Trabajo</h4>
+            </div>
+        </div>
+        
+    </section>
+
+    <div id="galeriaModal" class="modal">
+        <span class="cerrar-modal" onclick="cerrarGaleria()">&times;</span>
+        
+        <div class="modal-contenido">
+            <button class="nav-btn prev" onclick="cambiarImagen(-1)">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+
+            <div class="imagen-box">
+                <h3 id="tituloGaleria">Título del Servicio</h3>
+                <img id="imagenGaleria" src="" alt="Trabajo Realizado">
+                <p id="contadorFotos">1 / 1</p>
+            </div>
+
+            <button class="nav-btn next" onclick="cambiarImagen(1)">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <footer class="footer">
+            <div class="columnaVacia"></div>
+            <div class="columnaCentro">
+                <div class="imgFooter">
+                    <img id="Root MakeUp Logo" src="imagenes/logotransparente.png" loading="lazy">
+                    <p>Copyright © 2025 Root pro make up</p>
+                </div>
+            </div>
+            <div class="columnaDerecha"></div>
+    </footer>
+
+    <script src="js/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="../imagenes/logotipopag.png" type="image/png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración de Cuenta | Root MakeUP</title>
+    <script src="https://kit.fontawesome.com/b76b6f41c6.js" crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <a href="../index.html">
+                    <img id="Root MakeUp Logo" src="../imagenes/logotransparente.png" alt="Root Pro Make Up" loading="lazy">
+                </a>
+            </div>
+            <button class="menu-toggle" aria-label="Abrir menú">&#9776;</button>
+            <nav>
+                <ul class="content">
+                    <li><a href="/index1" id="page_item">Inicio</a></li>
+                    <li><a href="/cursos" id="page_item">Cursos</a></li>
+                    <li><a href="/servicios" id="page_item">Servicios</a></li>
+                    <li><a href="/sobremi" id="page_item">Sobre Mi</a></li>
+                    <li><a href="/contacto" id="page_item">Contacto</a></li>
+                    <li class="menu-cuenta">
+                        <a href="#" id="page_item">Mi cuenta
+                            <span class="arrow">▼</span>
+                        </a>
+                        <ul id="submenu">
+                            <li class="submenu_item"><a href="/login">Iniciar Sesión</a></li>
+                            <li class="submenu_item"><a href="/login">Registrarse</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section id="configuracion-minimalista">
+        <div class="container-narrow">
+            
+            <div class="header-main">
+                <h1>Configuración de la cuenta</h1>
+            </div>
+
+            <div class="form-bloque">
+                <h2>Cambiar Email</h2>
+                <form action="#" method="POST">
+                    <div class="form-group-clean">
+                        <label for="email-actual">Email Actual:</label>
+                        <input type="email" id="email-actual" name="email_actual" value="usuario@ejemplo.com" readonly class="input-gris">
+                    </div>
+                    <div class="form-group-clean">
+                        <label for="email-nuevo">Nuevo Email:</label>
+                        <input type="email" id="email-nuevo" name="email_nuevo">
+                    </div>
+                    <div class="btn-center">
+                        <button type="submit" class="boton-pill">Actualizar Email</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="spacer"></div>
+
+            <div class="form-bloque">
+                <h2>Cambiar Contraseña</h2>
+                <form action="#" method="POST">
+                    <div class="form-group-clean">
+                        <label for="pass-actual">Contraseña Actual:</label>
+                        <input type="password" id="pass-actual" name="pass_actual">
+                    </div>
+                    <div class="form-group-clean">
+                        <label for="pass-nueva">Nueva Contraseña:</label>
+                        <input type="password" id="pass-nueva" name="pass_nueva">
+                    </div>
+                    <div class="btn-center">
+                        <button type="submit" class="boton-pill">Cambiar Contraseña</button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="volver-link">
+                <a href="../dashboard.html">Volver a mi perfil</a>
+            </div>
+
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="columnaVacia"></div>
+        <div class="columnaCentro">
+            <div class="imgFooter">
+                <img id="Root MakeUp Logo" src="../imagenes/logotransparente.png" loading="lazy">
+                <p>Copyright © 2025 Root pro make up</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../js/script.

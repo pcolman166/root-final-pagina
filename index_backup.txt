@@ -1,0 +1,835 @@
+require("dotenv").config();
+const express = require("express");
+const mysql = require("mysql");
+const http = require("http");
+const cors = require("cors");
+const session = require("express-session");
+const axios = require("axios");
+const helmet = require("helmet");
+const { MercadoPagoConfig, Preference } = require("mercadopago");
+const bcrypt = require("bcrypt");
+const path = require("path"); 
+
+const app = express();
+const PORT = process.env.PORT || 3030;
+// Normalizar BASE_URL: asegurar que incluya protocolo (https por defecto)
+let BASE_URL = process.env.BASE_URL || '';
+if (BASE_URL && !/^https?:\/\//i.test(BASE_URL)) {
+  BASE_URL = 'https://' + BASE_URL;
+}
+// Log inicial para asegurar que el proceso llega hasta aquí
+console.log('🔧 Iniciando aplicación (NODE_ENV=' + (process.env.NODE_ENV || 'development') + ')');
+console.log('🔧 Cargando variables de entorno relevantes: PORT=' + PORT + ', BASE_URL=' + BASE_URL);
+
+// Manejo global de errores no capturados para que no se silencien los fallos
+process.on('uncaughtException', (err) => {
+  console.error('💥 Excepción no capturada:', err && err.stack ? err.stack : err);
+  // En desarrollo no terminar inmediatamente para poder leer el log, en producción podrías process.exit(1)
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('💥 Rechazo de promesa no manejado:', reason);
+});
+const bodyParser = require('body-parser');
+
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+
+
+// ----------------- Conexión a la DB -----------------
+let conexion = mysql.createConnection({
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  port: process.env.DB_PORT
+});
+
+// Conexión a la base de datos con reintento y manejo de errores explícito
+const connectWithRetry = () => {
+  // Crear una nueva instancia de conexión en cada intento para evitar estados fatales
+  conexion = mysql.createConnection({
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASS,
+    port: process.env.DB_PORT
+  });
+
+  conexion.connect(err => {
+    if (err) {
+      // No lanzar excepción no capturada; en su lugar loguear y reintentar
+      console.error('❌ Error conectando a MySQL:', err && err.code ? err.code : err.message || err);
+      console.error('➡️ Comprueba que el servicio de MySQL está en ejecución, que el puerto es correcto y las credenciales en .env son válidas.');
+      console.error(`   DB_HOST=${process.env.DB_HOST}, DB_PORT=${process.env.DB_PORT}, DB_USER=${process.env.DB_USER}, DB_NAME=${process.env.DB_NAME}`);
+      // Cerrar la conexión fallida si existe
+      try { conexion.destroy(); } catch (e) { /* ignore */ }
+      // Re-intentar después de 5 segundos
+      setTimeout(connectWithRetry, 5000);
+      return;
+    }
+    console.log("🟢 Conectado a la base de datos");
+  });
+
+  // Manejar errores en la conexión y permitir reintentos
+  conexion.on('error', (err) => {
+    console.error('💥 Error en conexión MySQL (evento):', err && err.code ? err.code : err.message || err);
+    if (err && (err.code === 'PROTOCOL_CONNECTION_LOST' || err.fatal)) {
+      // Reintentar conexión
+      console.log('🔁 Reintentando conexión a MySQL...');
+      setTimeout(connectWithRetry, 2000);
+    }
+  });
+};
+
+connectWithRetry();
+
+// ----------------- Middlewares -----------------
+// Helmet con Content Security Policy personalizada
+// Permitimos temporalmente algunos orígenes y 'unsafe-inline' para facilitar pruebas
+// Nota: en producción conviene eliminar 'unsafe-inline' y usar nonces/ hashes o mover eventos inline a JS.
+const helmetOptions = {
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", 'https://kit.fontawesome.com', "'unsafe-inline'"],
+      // Permitir atributos inline (onclick) temporalmente
+      scriptSrcAttr: ["'unsafe-inline'"],
+      scriptSrcElem: ["'self'", 'https://kit.fontawesome.com'],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      imgSrc: ["'self'", 'data:'],
+      connectSrc: ["'self'", BASE_URL || "'self'"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+    }
+  }
+};
+app.use(helmet(helmetOptions));
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
+app.use(express.json({ limit: "10kb" }));
+app.use(express.urlencoded({ extended: false }));
+// Servir correctamente la carpeta de JS en /js
+app.use('/js', express.static(path.join(__dirname, 'views', 'js')));
+// Configuración de sesión mejorada para ngrok
+app.enable('trust proxy'); // Necesario para HTTPS detrás de proxy
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'tu-secreto-seguro',
+    name: 'sessionId', // Cambiamos el nombre de la cookie
+    resave: false,
+    saveUninitialized: false,
+    rolling: true,
+    proxy: true,
+    cookie: {
+        secure: true,
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000,
+        sameSite: 'none',
+        path: '/'
+    }
+}));
+
+// Configuración de CORS mejorada: permitir localhost y la URL pública (ngrok) dinámica
+const allowedOrigins = [ 'http://localhost:3030' ];
+if (BASE_URL) allowedOrigins.push(BASE_URL);
+
+app.use(cors({ 
+  origin: function(origin, callback) {
+    // origin puede ser undefined en herramientas como curl/postman o en same-origin requests
+    if (!origin) return callback(null, true);
+
+    // Orígenes permitidos exactos
+    if (allowedOrigins.indexOf(origin) !== -1) return callback(null, true);
+
+    // Permitir si el origin empieza por BASE_URL (útil para ngrok/puertos probabilísticos)
+    if (BASE_URL && origin.startsWith(BASE_URL)) return callback(null, true);
+
+    // En desarrollo, ser permisivo para facilitar pruebas desde dispositivos móviles
+    if ((process.env.NODE_ENV || 'development') !== 'production') {
+      console.warn('⚠️ CORS DEV: permitiendo origen no listado ->', origin);
+      return callback(null, true);
+    }
+
+    console.warn('⚠️ CORS: origen no permitido ->', origin);
+    return callback(new Error('CORS origin not allowed'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Middleware de debug mejorado
+app.use((req, res, next) => {
+  console.log('📊 Debug Request:', {
+    path: req.path,
+    cookies: req.headers.cookie,
+    secure: req.secure,
+    protocol: req.protocol,
+    hostname: req.hostname,
+    originalUrl: req.originalUrl,
+    sessionID: req.sessionID,
+    session: {
+      id: req.session?.id,
+      usuarioID: req.session?.usuarioID,
+      cookie: req.session?.cookie
+    }
+  });
+  next();
+});
+
+// Middleware para mantener y verificar la sesión
+app.use((req, res, next) => {
+    console.log('🛣️ Ruta:', req.path);
+    console.log('👤 Session ID:', req.sessionID);
+    console.log('🔑 Usuario ID:', req.session?.usuarioID);
+    
+    // Guardar la sesión en cada request para mantenerla activa
+    if (req.session?.usuarioID) {
+        req.session.touch();
+        req.session.save((err) => {
+            if (err) console.error('Error al guardar sesión:', err);
+            next();
+        });
+    } else {
+        next();
+    }
+});
+
+// Rutas estáticas - no necesitan sesión
+const staticOptions = {
+    etag: true,
+    lastModified: true,
+    setHeaders: (res, path) => {
+        res.setHeader('Cache-Control', 'public, max-age=3600');
+    }
+};
+
+app.use("/css", express.static(__dirname + "/views/css", staticOptions));
+app.use("/imagenes", express.static(__dirname + "/views/imagenes", staticOptions));
+app.use(express.static(path.join(__dirname, 'views'), staticOptions));
+
+// Middleware para verificar sesión en rutas protegidas
+const verificarSesion = (req, res, next) => {
+    if (!req.session?.usuarioID) {
+        console.log('❌ Acceso denegado: no hay sesión');
+        return res.redirect('/login');
+    }
+    console.log('✅ Sesión verificada para usuario:', req.session.usuarioID);
+    next();
+};
+
+// Rutas protegidas que requieren sesión
+app.get("/cursos", verificarSesion, (req, res) => {
+    console.log('🎓 Mostrando cursos para usuario:', req.session.usuarioID);
+    res.render("cursos", { 
+        usuarioID: req.session.usuarioID,
+        usuario: req.session.usuario
+    });
+});
+app.get("/login", (req, res) => {
+  // Si ya hay sesión, redirigir a index1
+  if (req.session?.usuarioID) {
+    console.log('👤 Usuario ya logueado, redirigiendo a index1');
+    return res.redirect('/index1');
+  }
+  console.log('📝 Mostrando página de login');
+  res.render("login");
+});
+app.get("/registro", (req, res) => {
+  res.render("registro");
+});
+app.get("/carrito", (req, res) => {
+  if (!req.session.usuarioID || req.session.rol !== "usuario") return res.redirect("/login.ejs");
+  res.render("carrito", { usuarioID: req.session.usuarioID });
+}
+);  
+app.get("/perfil", (req, res) => {
+  if (!req.session.usuarioID || req.session.rol !== "usuario") return res.redirect("/login.ejs");
+  res.render("perfil", { usuarioID: req.session.usuarioID });
+}
+);
+app.get("/sobremi", (req, res) => {
+    res.render("sobremi");
+});
+
+app.get("/contacto", (req, res) => {
+    res.render("contacto");
+});
+
+app.get("/servicios", (req, res) => {
+    res.render("servicios");
+});
+
+// ----------------- Rutas -----------------
+app.get("/", (req, res) => {
+    // Si hay sesión, ir a index1, si no a login
+    if (req.session?.usuarioID) {
+        console.log('👤 Usuario logueado, redirigiendo a index1');
+        return res.redirect('/index1');
+    }
+    console.log('📝 Redirigiendo a login');
+    res.redirect('/login');
+});
+
+app.get("/index1", (req, res) => {
+    // Verificar si hay sesión
+    if (!req.session?.usuarioID) {
+        console.log('❌ No hay sesión, redirigiendo a login');
+        return res.redirect('/login');
+    }
+    console.log('✅ Mostrando index1 para usuario:', req.session.usuarioID);
+    res.render("index1");
+});
+
+// ----------------- Login y registro -----------------
+// ----------------- Login y Registro (con bcrypt) -----------------
+
+// Iniciar sesión
+app.post("/iniciar", async (req, res) => {
+    console.log('🔑 Intento de inicio de sesión');
+    const { usuarioIng, contrasenaIng } = req.body;
+
+    try {
+        if (!usuarioIng || !contrasenaIng) {
+            console.log('❌ Faltan datos de inicio de sesión');
+            return res.status(400).send("Falta usuario o contraseña");
+        }
+
+        const consultaUsuario = "SELECT * FROM usuario WHERE NOMBRE = ?";
+        conexion.query(consultaUsuario, [usuarioIng], async (error, resultadoUsuario) => {
+            if (error) {
+                console.error("❌ Error en consulta:", error);
+                return res.status(500).send("Error del servidor");
+            }
+
+            if (resultadoUsuario.length === 0) {
+                console.log('❌ Usuario no encontrado:', usuarioIng);
+                return res.status(401).send("Usuario no encontrado");
+            }
+
+            const usuario = resultadoUsuario[0];
+            const esValida = await bcrypt.compare(contrasenaIng, usuario.CONTRASENIA);
+
+            if (!esValida) {
+                console.log('❌ Contraseña incorrecta para usuario:', usuarioIng);
+                return res.status(401).send("Contraseña incorrecta");
+            }
+
+            // Establecer la sesión directamente
+            req.session.usuarioID = usuario.ID_USUARIO;
+            req.session.rol = "usuario";
+            req.session.usuario = usuario.NOMBRE;
+            
+            // Forzar guardado de sesión
+            await new Promise((resolve, reject) => {
+                req.session.save((err) => {
+                    if (err) {
+                        console.error("❌ Error al guardar sesión:", err);
+                        reject(err);
+                    } else {
+                        resolve();
+                    }
+                });
+            });
+            
+            console.log("✅ Sesión iniciada para usuario:", {
+                id: req.sessionID,
+                usuarioID: usuario.ID_USUARIO,
+                nombre: usuario.NOMBRE,
+                cookie: req.session.cookie
+            });
+            
+            // Enviar las cookies antes de redirigir
+            res.setHeader('Cache-Control', 'no-store');
+            res.setHeader('Pragma', 'no-cache');
+            
+            return res.redirect("/index1");
+        });
+    } catch (err) {
+        console.error("❌ Error general:", err);
+        res.status(500).send("Error del servidor");
+    }
+});
+
+// Registrar nuevo usuario
+app.post("/registrar", async (req, res) => {
+  const { nombre, apellido, DNI, correo, telefono, contrasena } = req.body;
+
+  if (!nombre || !apellido || !DNI || !correo || !telefono || !contrasena) {
+    return res.status(400).send("Faltan datos en el registro");
+  }
+
+  try {
+    // Verificar si el usuario o DNI ya existen
+    const verificarUsuario = "SELECT * FROM usuario WHERE DNI = ? OR NOMBRE = ?";
+    conexion.query(verificarUsuario, [DNI, correo], async (error, resultado) => {
+      if (error) {
+        console.error("❌ Error al verificar usuario:", error);
+        return res.status(500).send("Error al verificar usuario");
+      }
+
+      if (resultado.length > 0) {
+        return res.status(409).send("El usuario o DNI ya están registrados");
+      }
+
+      // Generar hash seguro con bcrypt
+      const hash = await bcrypt.hash(contrasena, 10);
+
+      // Insertar en tabla persona
+      const registrarPersona = `
+        INSERT INTO persona (DNI, NOMBRE, APELLIDO, EMAIL, TELEFONO)
+        VALUES (?, ?, ?, ?, ?)
+      `;
+      conexion.query(registrarPersona, [DNI, nombre, apellido, correo, telefono], (errorPersona) => {
+        if (errorPersona) {
+          console.error("❌ Error al registrar persona:", errorPersona);
+          return res.status(500).send("Error al registrar persona");
+        }
+
+        // Insertar en tabla usuario con contraseña hasheada
+        const registrarUsuario = `
+          INSERT INTO usuario (DNI, NOMBRE, CONTRASENIA)
+          VALUES (?, ?, ?)
+        `;
+        conexion.query(registrarUsuario, [DNI, correo, hash], (errorUsuario) => {
+          if (errorUsuario) {
+            console.error("❌ Error al registrar usuario:", errorUsuario);
+            return res.status(500).send("Error al registrar usuario");
+          }
+
+          console.log(`✅ Usuario ${correo} registrado correctamente`);
+          return res.send("usuario registrado con exito preciona f5 para volver"); 
+        });
+      });
+    });
+  } catch (err) {
+    console.error("❌ Error general en registro:", err);
+    res.status(500).send("Error interno del servidor");
+  }
+});
+
+app.get("/logout", (req, res) => {
+  req.session.destroy(err => {
+    if (err) return res.status(500).send("Error al cerrar sesión");
+    res.redirect("/login.ejs");
+  });
+});
+
+// Ruta de desarrollo: setea sesión para pruebas rápidas (SOLO en desarrollo)
+if ((process.env.NODE_ENV || 'development') !== 'production') {
+  app.get('/dev-login', (req, res) => {
+    const id = Number(req.query.id || 5);
+    req.session.usuarioID = id;
+    req.session.usuario = { nombre: 'Dev User ' + id };
+    req.session.save(err => {
+      if (err) {
+        console.error('Error al guardar sesión en /dev-login:', err);
+        return res.status(500).json({ ok: false, error: 'session-save-failed' });
+      }
+      console.log('🔧 /dev-login: sesión creada para usuario', id);
+      return res.json({ ok: true, usuarioID: id });
+    });
+  });
+}
+
+// ----------------- Configuración Mercado Pago-----------------
+app.get("/configMercadoPago", (req, res) => {
+  try {
+  // no need to configure here; just return the public key
+  res.json({ publicKey: process.env.MP_PUBLIC_KEY });
+  } catch (error) {
+    console.error("Error en configuración MP:", error);
+    res.status(500).send("Error en configuración de MercadoPago");
+  }
+});
+
+// Endpoint para generar preferencia de pago
+// Middleware para verificar los datos necesarios para el pago
+const verificarDatosPago = (req, res, next) => {
+    if (!process.env.MP_ACCESS_TOKEN || !process.env.MP_PUBLIC_KEY) {
+        console.error('❌ Error: Faltan credenciales de MercadoPago');
+        return res.status(500).send('Error de configuración del servidor');
+    }
+    if (!process.env.BASE_URL) {
+        console.error('❌ Error: Falta BASE_URL');
+        return res.status(500).send('Error de configuración del servidor');
+    }
+    next();
+};
+
+app.get('/generar', verificarDatosPago, async (req, res) => {
+    try {
+        // Verificación estricta de sesión
+        const usuarioID = req.session?.usuarioID;
+    console.log('🔍 Verificando sesión en /generar:', {
+      sessionID: req.sessionID,
+      usuarioID: usuarioID,
+      sessionContent: req.session,
+      origin: req.headers.origin,
+      isAjaxRequest: (req.query.json === '1' || (req.headers.accept || '').includes('application/json'))
+    });
+
+    if (!usuarioID) {
+      console.log('❌ Usuario no autenticado en /generar');
+      // Si la petición viene desde AJAX/mobile devolver JSON para que el cliente pueda manejarlo
+      if (req.query.json === '1' || (req.headers.accept || '').includes('application/json')) {
+        return res.status(401).json({ error: 'no-auth', message: 'Usuario no autenticado' });
+      }
+      return res.redirect('/login');
+    }
+
+        const cursoId = req.query.cursoId;
+        console.log('📦 Buscando curso:', cursoId);
+
+        let curso = null;
+
+        // Si no se proporciona cursoId, usar curso de prueba
+        if (!cursoId) {
+            console.log('ℹ️ No se proporcionó cursoId, usando curso de prueba');
+            curso = {
+                ID_CURSO: 0,
+                NOMBRE_CURSO: 'Curso de prueba',
+                PRECIO: 100
+            };
+        } else {
+            try {
+                curso = await new Promise((resolve, reject) => {
+                    conexion.query(
+                        'SELECT ID_CURSO, NOMBRE_CURSO, PRECIO FROM CURSO WHERE ID_CURSO = ?',
+                        [cursoId],
+                        (err, results) => {
+                            if (err) {
+                                console.error('❌ Error en consulta SQL:', err);
+                                return reject(err);
+                            }
+                            if (!results || results.length === 0) {
+                                console.log('⚠️ No se encontró el curso:', cursoId);
+                                return resolve(null);
+                            }
+                            console.log('✅ Curso encontrado:', results[0]);
+                            return resolve(results[0]);
+                        }
+                    );
+                });
+            } catch (dbError) {
+                console.error('❌ Error al consultar la base de datos:', dbError);
+                return res.status(500).send('Error al buscar el curso');
+            }
+        }
+
+        // Si no se encontró el curso, usar uno de prueba
+        if (!curso) {
+            console.log('ℹ️ Usando curso de prueba por fallback');
+            curso = {
+                ID_CURSO: cursoId || 0,
+                NOMBRE_CURSO: 'Curso de prueba',
+                PRECIO: 100
+            };
+        }
+
+    // Comprobar si el usuario ya pagó este curso (evitar pago duplicado)
+    try {
+      const existePago = await new Promise((resolve, reject) => {
+        const sql = `SELECT comp.NUM_OP FROM COMPROBANTE comp JOIN CARRITO c ON comp.ID_CARRITO = c.ID_CARRITO WHERE c.ID_USUARIO = ? AND c.ID_CURSO = ? LIMIT 1`;
+        conexion.query(sql, [usuarioID, curso.ID_CURSO], (err, results) => {
+          if (err) return reject(err);
+          if (!results || results.length === 0) return resolve(null);
+          return resolve(results[0]);
+        });
+      });
+
+      if (existePago) {
+        console.log(`⚠️ Usuario ${usuarioID} ya pagó el curso ${curso.ID_CURSO} (op=${existePago.NUM_OP})`);
+        if (req.query.json === '1' || (req.headers.accept || '').includes('application/json')) {
+          return res.status(409).json({ error: 'already_paid', message: 'Ya pagaste este curso', num_op: existePago.NUM_OP });
+        }
+        // Para peticiones normales, redirigir a la lista de cursos
+        return res.redirect('/cursos');
+      }
+    } catch (dbCheckErr) {
+      console.error('❌ Error comprobando pagos existentes:', dbCheckErr);
+      // No impedir la compra por error en la comprobación; pero loguearlo
+    }
+
+    // Si se configuró un payment link estático (p.ej. link de Mercado Pago), usarlo
+    if (process.env.MP_PAYMENT_LINK) {
+      const raw = process.env.MP_PAYMENT_LINK;
+      const payUrl = raw.startsWith('http') ? raw : `https://${raw}`;
+      console.log('ℹ️ Usando MP_PAYMENT_LINK configurado ->', payUrl);
+      if (req.query.json === '1' || (req.headers.accept || '').includes('application/json')) {
+        return res.json({ init_point: payUrl, id: null });
+      }
+      return res.redirect(payUrl);
+    }
+
+    // Crear cliente y preferencia
+        console.log('🔑 Usando token:', process.env.MP_ACCESS_TOKEN?.substring(0, 10) + '...');
+        
+        const client = new MercadoPagoConfig({ 
+            accessToken: process.env.MP_ACCESS_TOKEN 
+        });
+
+        // Asegurarnos de que el precio sea un número
+        const precio = Number(curso.PRECIO) || 100;
+        console.log('💵 Precio del curso:', precio);
+
+        const preference = {
+            items: [{
+                id: curso.ID_CURSO.toString(),
+                title: curso.NOMBRE_CURSO || 'Curso',
+                quantity: 1,
+                unit_price: precio,
+                currency_id: 'ARS',
+                description: 'Compra de curso en plataforma'
+            }],
+            payer: {
+                email: 'test_user@example.com',
+                name: 'Test User',
+                identification: {
+                    type: 'DNI',
+                    number: '12345678'
+                }
+            },
+            payment_methods: {
+                excluded_payment_types: [
+                    { id: "ticket" }
+                ],
+                installments: 1
+            },
+      // Incluir metadata con el ID de vendedor para que llegue en la notificación
+      metadata: {
+        seller_id: process.env.MP_MERCHANT_ID || 'unknown'
+      },
+      back_urls: {
+        success: `${BASE_URL}/success`,
+        failure: `${BASE_URL}/failure`,
+        pending: `${BASE_URL}/pending`
+      },
+            external_reference: `${usuarioID}-${curso.ID_CURSO}`,
+      notification_url: `${BASE_URL}/notificar?usuario=${usuarioID}&curso=${curso.ID_CURSO}`
+        };
+
+        console.log('💰 Generando preferencia:', JSON.stringify(preference, null, 2));
+
+    try {
+      const response = await new Preference(client).create({ body: preference });
+      console.log('✨ Preferencia creada:', response.id);
+
+      if (!response.init_point) {
+        console.error('❌ La respuesta de MP no incluyó init_point:', response);
+        // Si el cliente esperaba JSON, devolver error JSON
+        if (req.query.json === '1' || (req.headers.accept || '').includes('application/json')) {
+          return res.status(500).json({ error: 'No se pudo obtener URL de pago desde Mercado Pago' });
+        }
+        return res.redirect('/failure');
+      }
+
+      console.log('🔗 URL de pago:', response.init_point);
+
+      // Soporte para cliente AJAX/móvil: si se solicita JSON, devolver init_point
+      if (req.query.json === '1' || (req.headers.accept || '').includes('application/json')) {
+        return res.json({ init_point: response.init_point, id: response.id });
+      }
+
+      return res.redirect(response.init_point);
+    } catch (mpError) {
+      console.error('❌ Error al crear preferencia:', mpError);
+      console.error('Detalles:', mpError.response?.data || mpError.message);
+      // Si el request viene desde AJAX/mobile devolver el error en JSON
+      if (req.query.json === '1' || (req.headers.accept || '').includes('application/json')) {
+        return res.status(500).json({ error: mpError.response?.data || mpError.message });
+      }
+      // En caso de petición normal redirigir a página de fallo amigable
+      return res.redirect('/failure');
+    }
+
+    } catch (error) {
+        console.error('❌ Error:', error);
+        res.status(500).send('Error al generar preferencia');
+    }
+});
+
+app.get('/success', (req, res) => {
+  res.send("Pago realizado con éxito");
+});
+
+// Página amigable de fallo de pago para evitar el error genérico de Mercado Pago
+app.get('/failure', (req, res) => {
+  try {
+    return res.render('failure');
+  } catch (err) {
+    console.error('Error al renderizar /failure:', err);
+    return res.status(500).send('Error mostrando la página de fallo');
+  }
+});
+
+// Ruta de diagnóstico para verificar el estado del checkout
+app.get('/checkout-status', (req, res) => {
+  const status = {
+    session: {
+      active: !!req.session,
+      id: req.sessionID,
+      usuarioID: req.session?.usuarioID
+    },
+    headers: {
+      origin: req.headers.origin,
+      host: req.headers.host,
+      cookie: !!req.headers.cookie
+    },
+    env: {
+      baseUrl: !!process.env.BASE_URL,
+      mpToken: !!process.env.MP_ACCESS_TOKEN,
+      mpPublic: !!process.env.MP_PUBLIC_KEY
+    }
+  };
+  console.log('📊 Estado del checkout:', status);
+  res.json(status);
+});
+
+// Endpoint de diagnóstico para comprobar CORS, cookies y reachability desde el cliente
+app.get('/ping', (req, res) => {
+  console.log('🏓 /ping recibido desde origin=', req.headers.origin, ' cookies=', req.headers.cookie);
+  res.json({ ok: true, origin: req.headers.origin || null, cookies: req.headers.cookie || null, session: { usuarioID: req.session?.usuarioID, rol: req.session?.rol } });
+});
+
+app.all('/notificar', async (req, res) => {
+  try {
+    const query = req.query || {};
+    const topic = (query.topic || query.type || '').toString();
+    const usuario = query.usuario || query.user || null;
+    const curso = query.curso || query.course || null;
+
+    const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN });
+
+    // Helper: evita inserciones duplicadas comprobando COMPROBANTE por NUM_OP
+    const comprobanteExiste = async (numOp) => {
+      return new Promise((resolve, reject) => {
+        conexion.query('SELECT 1 FROM COMPROBANTE WHERE NUM_OP = ? LIMIT 1', [numOp], (err, results) => {
+          if (err) return reject(err);
+          resolve(Array.isArray(results) && results.length > 0);
+        });
+      });
+    };
+
+    const crearCompra = async (usuarioId, cursoId, numOp) => {
+      // Crear carrito
+      const carritoId = await new Promise((resolve, reject) => {
+        conexion.query(
+          'INSERT INTO CARRITO (ID_USUARIO, ID_CURSO, CANTIDAD, FECHACOMPRA) VALUES (?, ?, 1, CURDATE())',
+          [usuarioId, cursoId],
+          (error, results) => {
+            if (error) return reject(error);
+            resolve(results.insertId);
+          }
+        );
+      });
+
+      // Crear comprobante
+      await new Promise((resolve, reject) => {
+        conexion.query(
+          'INSERT INTO COMPROBANTE (ID_CARRITO, ID_USUARIO, NUM_OP) VALUES (?, ?, ?)',
+          [carritoId, usuarioId, numOp],
+          (error) => {
+            if (error) return reject(error);
+            resolve();
+          }
+        );
+      });
+      console.log(`✅ Compra registrada: usuario=${usuarioId}, curso=${cursoId}, op=${numOp}`);
+    };
+
+    // Process payment notifications
+    if (topic.includes('payment')) {
+      const paymentId = query.id || query['data.id'] || (req.body && (req.body.id || req.body['data.id']));
+      if (!paymentId) {
+        console.warn('⚠️ notificar: payment topic sin id');
+        return res.sendStatus(200);
+      }
+
+      let paymentInfo;
+      try {
+        // Usar axios directo a la API de Mercado Pago como fallback
+        const resp = await axios.get(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+          headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` }
+        });
+        paymentInfo = resp.data;
+      } catch (err) {
+        console.error('❌ Error consultando pago en MP:', err && err.message ? err.message : err);
+        return res.sendStatus(200);
+      }
+
+      const status = paymentInfo?.status || paymentInfo?.status_detail;
+      console.log('📣 notificar payment status =', status);
+
+      if (status === 'approved' || status === 'authorized') {
+        if (!usuario || !curso) {
+          console.warn('⚠️ notificar: faltan usuario o curso en query, no se crea registro');
+          return res.sendStatus(200);
+        }
+
+        const exists = await comprobanteExiste(paymentId);
+        if (exists) {
+          console.log('ℹ️ Comprobante ya existe para NUM_OP', paymentId);
+          return res.sendStatus(200);
+        }
+
+        await crearCompra(usuario, curso, paymentId);
+      }
+
+      return res.sendStatus(200);
+    }
+
+    // Process merchant_order (puede contener varios pagos)
+    if (topic.includes('merchant_order') || topic.includes('merchant')) {
+      const orderId = query.id || query['id'] || (req.body && (req.body.id || req.body['data.id']));
+      if (!orderId) {
+        console.warn('⚠️ notificar: merchant_order sin id');
+        return res.sendStatus(200);
+      }
+
+      let orderInfo;
+      try {
+        const resp = await axios.get(`https://api.mercadopago.com/merchant_orders/${orderId}`, {
+          headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` }
+        });
+        orderInfo = resp.data;
+      } catch (err) {
+        console.error('❌ Error consultando merchant_order en MP:', err && err.message ? err.message : err);
+        return res.sendStatus(200);
+      }
+
+      const payments = orderInfo?.payments || [];
+      for (const p of payments) {
+        const pid = p.id || p.payment_id;
+        const pst = p.status || p.status_detail || p.status;
+        if (pid && (pst === 'approved' || pst === 'authorized')) {
+          if (!usuario || !curso) {
+            console.warn('⚠️ notificar(merchant): faltan usuario o curso en query, no se crea registro');
+            continue;
+          }
+          const exists = await comprobanteExiste(pid);
+          if (exists) {
+            console.log('ℹ️ Comprobante ya existe para NUM_OP', pid);
+            continue;
+          }
+          await crearCompra(usuario, curso, pid);
+        }
+      }
+
+      return res.sendStatus(200);
+    }
+
+    // Para otros topics, simplemente ACK
+    return res.sendStatus(200);
+  } catch (error) {
+    console.error('❌ Error en notificación general:', error);
+    return res.status(500).send('Error al procesar notificación');
+  }
+});
+
+// ----------------- Servidor -----------------
+http.createServer(app).listen(PORT, () => {
+  console.log("🚀 Servidor activo en puerto " + PORT);
+});
+

@@ -1,0 +1,116 @@
+<html lang="en">
+<head>
+    <link rel="icon" href="imagenes/logotipopag.png" type="image/png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Root MakeUp: Aprende maquillaje profesional con cursos online, horarios flexibles y certificados digitales.">
+    <script src="https://kit.fontawesome.com/b76b6f41c6.js" crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/responsive.css">    
+    <title>Inicio Sesión | Root MakeUP</title>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <img id="Root MakeUp Logo" src="imagenes/logotransparente.png" alt="Root Pro Make Up" loading="lazy">
+            </div>
+            <button class="menu-toggle" aria-label="Abrir menú">&#9776;</button>
+            <nav>
+                <ul class="content">
+                    <li><a href="/index1" id="page_item">Inicio</a></li>
+                    <li><a href="/cursos" id="page_item">Cursos</a></li>
+                    <li><a href="/servicios" id="page_item">Servicios</a></li>
+                    <li><a href="/sobremi" id="page_item">Sobre Mi</a></li>
+                    <li><a href="/contacto" id="page_item">Contacto</a></li>
+                    <li class="menu-cuenta">
+                        <a href="#" id="page_item">Mi cuenta
+                            <span class="arrow">▼</span>
+                        </a>
+                        <ul id="submenu">
+                            <li class="submenu_item"><a href="/login">Iniciar Sesión</a></li>
+                            <li class="submenu_item"><a href="/login">Registrarse</a></li>
+                        <ul>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+   <section class="contenedorFormulario">
+    <div class="columnaWrapper">
+        <form class="columnaInicioSesion" id="loginForm">
+            <h2>Iniciar Sesión</h2>
+            
+            <div class="form-group">
+                <label for="login-email">Correo Electrónico:</label>
+                <input type="email" id="login-email" name="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="login-password">Contraseña:</label>
+                <input type="password" id="login-password" name="password" required>
+            </div>
+            
+            <div class="opciones-login">
+                <a href="#" class="enlace-olvido">¿Olvidaste la contraseña?</a>
+            </div>
+
+            <button class="boton-acceso-principal" type="submit">Acceso</button>
+        </form>
+    </div>
+
+    <div class="columnaWrapper">
+        <form class="columnaRegistro" id="registroForm">
+            <h2>Registrarse</h2>
+            
+            <div class="form-group">
+                <label for="reg-nombre">Nombre:</label>
+                <input type="text" id="reg-nombre" name="nombre" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="reg-apellido">Apellido:</label>
+                <input type="text" id="reg-apellido" name="apellido" required>
+            </div>
+
+            <div class="form-group">
+                <label for="reg-dni">DNI:</label>
+                <input type="text" id="reg-dni" name="DNI" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="reg-email">Correo Electrónico:</label>
+                <input type="email" id="reg-email" name="email" required> 
+            </div>
+            
+            <div class="form-group">
+                <label for="reg-password">Contraseña:</label>
+                <input type="password" id="reg-password" name="password" required>
+            </div>
+
+            <div class="form-group">
+                <label for="reg-confirmar-password">Confirmar Contraseña:</label>
+                <input type="password" id="reg-confirmar-password" name="confirmar-password" required>
+            </div>
+
+            <button class="boton-acceso-principal" type="submit">Registrarse</button>
+        </form>
+    </div>
+</section>
+
+    <footer class="footer">
+            <div class="columnaVacia">
+
+            </div>
+            <div class="columnaCentro">
+                <div class="imgFooter">
+                    <img id="Root MakeUp Logo" src="imagenes/logotransparente.png" loading="lazy">
+                    <p>Copyright © 2025 Root pro make up</p>
+                </div>
+            </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,305 @@
+@media (max-width: 768px) {
+        .menu-toggle {
+        display: block;
+        position: absolute;
+        right: 15%;
+        margin-left: auto;
+        margin-right: 0;
+        z-index: 2001;
+    }
+    .content {
+        display: none;
+        flex-direction: column;
+        background: #403534;
+        position: absolute;
+        top: 100px;
+        left: 0;
+        width: 100vw;
+        z-index: 1000;
+        gap: 0;
+        max-width: 100vw;
+        flex-wrap: nowrap;
+        align-items: stretch;
+        padding: 0;
+    }
+    .content.show {
+        display: flex;
+    }
+    .content li {
+        flex: unset;
+        text-align: center;
+        margin: 0;
+        border-bottom: 1px solid #c9a27e;
+        width: 100%;
+        padding: 12px 0;
+    }
+    header .container {
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+    }
+    .logo {
+        margin-right: auto;
+    }
+    .menu-cuenta #submenu {
+        display: none;
+        position: static;
+        background: none;
+        box-shadow: none;
+        padding: 0;
+    }
+    .menu-cuenta.open #submenu {
+        display: flex;
+        flex-direction: column;
+    }
+    .contacto-header-grid {
+        grid-template-columns: 1fr; 
+        gap: 20px;
+        padding: 0 10px 30px 10px;
+    }
+
+    .columnaDobleContacto {
+        grid-template-columns: 1fr; 
+        gap: 10px;
+    }
+
+    .enviarFormulario {
+        float: none; 
+        display: block;
+        margin: 20px auto 0 auto; 
+        width: 60%; 
+    }
+
+    .columna-info-contacto h1 {
+        font-size: 1.5rem; 
+    }
+}
+
+@media only screen and (max-width: 625px){
+    header .container {
+        display: flex;
+        flex-direction: column; 
+        align-items: center;
+        justify-content: center;
+        position:relative;
+        z-index:100;
+    }
+    header nav{
+        margin-bottom: 10px;
+    }
+    
+    .content li {
+        flex: 1 1 25%; 
+        text-align: center;
+        margin: 5px;
+    }
+    .carousel-btn {
+         display: block;
+    }
+}
+
+@media screen and (min-width: 640px) {
+    #hero{
+        height: 70vh;
+    }
+    #hero > h1{
+        font-size: 1.5em;
+    }
+    #botonAction{
+        font-size: 0.8em;
+    }
+    #nuestros-cursos h2{
+        font-size: 1.8em;
+    }
+    #somos-root h2 {
+        font-size: 1.4rem; 
+    }
+    #somos-root p {
+    font-size: 0.85rem;
+}
+    #nuestros-cursos p{
+        display:block;
+    }
+    .grid-cursos-index{
+    display: grid;
+    height: 60vh;
+    grid-template-columns: 1fr 1fr 1fr;
+    }
+    .carta{
+        padding: 20px;
+        margin: 10px;
+        height: auto;
+        display: grid;
+        grid-template-columns: 1fr 
+    }
+    #botonCursos > #botonAction{
+        width: 20%;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    h1 { font-size: 1.5rem; } 
+    h2 { font-size: 1.3rem; }
+    h4 { font-size: 0.9rem; }
+    p { font-size: 0.75rem; }
+    .proximos-cursos h2 {
+    font-size: 0.75rem;
+    }
+    .servicios-grid {
+        grid-template-columns: repeat(2, 1fr); 
+        gap: 20px; 
+    }
+
+    .contenedorFormulario {
+        grid-template-columns: 1fr; 
+        text-align: center;
+    }
+
+    .columnaDobleContacto {
+        grid-template-columns: 1fr; 
+    }
+
+    .titulo, .campo {
+        grid-column: span 1; 
+    }
+
+    .enviarFormulario {
+        width: 45%; 
+        padding: 2px 0px;
+        margin-top: 10px;
+    }
+     #hero {
+        height: 100vh;
+    }
+
+}
+@media (max-width: 480px) {
+        .servicios-grid {
+            grid-template-columns: 1fr;
+        }
+}
+@media (max-width: 768px) {
+    #biografia-grid {
+        grid-template-columns: 1fr; 
+        gap: 30px;
+    }
+
+
+    .columna-texto-biografia {
+        padding-right: 0;
+    }
+    
+
+    .columna-imagen-personal {
+        text-align: center;
+    }
+
+    #imagen-personal {
+        max-width: 80%; 
+    }
+}
+@media screen and (max-width: 768px) {
+ 
+    h1 { font-size: 1.5rem; } 
+    h2 { font-size: 1.3rem; }
+    h4 { font-size: 0.9rem; }
+    p { font-size: 0.75rem; }
+   
+    .contacto-header-grid { grid-template-columns: 1fr; gap: 20px; padding: 0 10px 30px 10px; }
+    .columnaDobleContacto { grid-template-columns: 1fr; gap: 10px; }
+    .enviarFormulario { float: none; display: block; margin: 20px auto 0 auto; width: 60%; }
+    #biografia-grid { grid-template-columns: 1fr; gap: 30px; }
+    .columna-texto-biografia { padding-right: 0; }
+    .columna-imagen-personal { text-align: center; }
+    #imagen-personal { max-width: 80%; }
+ 
+    .cursos-grid {
+        grid-template-columns: 1fr; 
+    }
+
+    .curso {
+        height: auto !important; 
+        display: block; 
+        padding-bottom: 10px;
+        transform: none !important;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08); 
+    }
+    
+.curso-media {
+    position: relative; 
+    width: 100%;
+    height: 0 !important; 
+    padding-bottom: 133.33% !important; 
+    
+    overflow: hidden !important; 
+    box-shadow: none !important;
+    transition: none;
+}
+
+.curso img {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+
+    width: 100% !important;
+    height: 100% !important; 
+    
+    object-fit: cover;
+    border-radius: 10px 10px 0 0;
+    transform: none !important; 
+}
+    .curso-overlay-detalle {
+        opacity: 1 !important;
+        position: relative; 
+        top: auto; 
+        left: auto;
+        height: auto;
+        background-color: #dfd5c1; 
+        color: #403534; 
+        padding: 15px 20px; 
+        z-index: auto;
+        
+        align-items: flex-start; 
+        text-align: left; 
+        border-bottom: 1px solid #d4c7b8;
+        transition: none; 
+    }
+
+    .curso-media:hover .curso-overlay-detalle {
+         opacity: 1 !important; 
+    }
+    
+    .curso-overlay-detalle p {
+        color: #666; 
+        font-size: 0.85rem;
+        text-align: left;
+        margin-top: 0;
+        line-height: 1.4;
+    }
+    .curso-overlay-detalle .precios-container {
+        display: block; 
+        margin-top: 10px;
+        text-align: left; 
+    }
+    .curso-overlay-detalle #descuento {
+        display: inline; 
+        margin-right: 10px;
+        color: #c9a27e;
+    }
+    .curso-overlay-detalle b {
+        display: inline; 
+        color: #403534; 
+        font-size: 1.2rem;
+    }
+    .curso-overlay-detalle span {
+        display: inline;
+        color: #403534;
+    }
+
+    .curso-info-visible {
+        height: auto;
+        padding: 15px 20px 5px 20px; 
+        align-items: center; 
+        text-align: center;
+    }   
+}

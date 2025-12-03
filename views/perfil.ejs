@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Perfil | Root MakeUP</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <div class="logo"><img src="/imagenes/logotransparente.png" alt="Logo" loading="lazy"></div>
+      <nav>
+        <ul class="content">
+          <li><a href="index1.ejs">Inicio</a></li>
+          <li><a href="cursos.ejs">Cursos</a></li>
+          <li><a href="dashboard.ejs">Mi cuenta</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <h1>Mi perfil</h1>
+    <p>Usuario ID: <%= typeof usuarioID !== 'undefined' ? usuarioID : 'N/A' %></p>
+
+    <section>
+      <h2>Acciones</h2>
+      <ul>
+        <li><a href="/dashboard">Ver mis cursos</a></li>
+        <li><a href="/editar-cuenta">Editar cuenta</a></li>
+        <li><a href="/logout">Cerrar sesión</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="columnaCentro">
+      <p>Copyright © 2025 Root pro make up</p>
+    </div>
+  </footer>
+
+</body>
+</html>

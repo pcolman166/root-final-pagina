@@ -1,0 +1,95 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Root MakeUp: Aprende maquillaje profesional con cursos online, horarios flexibles y certificados digitales.">
+    <script src="https://kit.fontawesome.com/b76b6f41c6.js" crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    
+    <title>Inicio | Root MakeUP</title>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <img id="Root MakeUp Logo" src="imagenes/logotransparente.png" alt="Root Pro Make Up" loading="lazy">
+            </div>
+            <button class="menu-toggle" aria-label="Abrir menú">&#9776;</button>
+            <nav>
+                <ul class="content">
+                    <li><a href="/index1" id="page_item">Inicio</a></li>
+                    <li><a href="/cursos" id="page_item">Cursos</a></li>
+                    <li><a href="/servicios" id="page_item">Servicios</a></li>
+                    <li><a href="/sobremi" id="page_item">Sobre Mi</a></li>
+                    <li><a href="/contacto" id="page_item">Contacto</a></li>
+                    <li class="menu-cuenta">
+                        <a href="#" id="page_item">Mi cuenta
+                            <span class="arrow">▼</span>
+                        </a>
+                        <ul id="submenu">
+                            <li class="submenu_item"><a href="/login">Iniciar Sesión</a></li>
+                            <li class="submenu_item"><a href="/login">Registrarse</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section id="dashboard">
+        <div class="container">
+            <!-- Agregar función para obtener el nombre del usuario desde la BBDD-->
+            <h1>Bienvenida, [NombreUsuario]</h1>
+            <p class="dashboard-subtitle">Aquí puedes ver tus cursos y gestionar tu cuenta.</p>
+
+            <div class="dashboard-content">
+                <div class="dashboard-main">
+                    <h2>Mis Cursos</h2>
+                    <div class="cursos-grid">
+                        <div class="curso">
+                            <img src="imagenes/cursos/novia.JPG" alt="Curso de Automaquillaje de día">
+                            <h4>Curso de Automaquillaje de día</h4>
+                            <p>Progreso: 75%</p>
+                            <progress value="75" max="100"></progress>
+                            <button class="boton">Continuar curso</button>
+                        </div>
+                        <div class="curso">
+                            <img src="imagenes/cursos/novia.JPG" alt="Curso de Automaquillaje de noche">
+                            <h4>Curso de Automaquillaje de noche</h4>
+                            <p>Progreso: 30%</p>
+                            <progress value="30" max="100"></progress>
+                            <button class="boton">Continuar curso</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <div class="container">
+            <a href="dashboard/editar-cuenta.html" class="boton-config">Configuración de la cuenta</a>
+        </div>
+        <div class="container">
+            <a href="#" class="boton-config">Mis certificados</a>
+        </div>
+    </section>
+
+
+    <footer class="footer">
+            <div class="columnaVacia">
+
+            </div>
+            <div class="columnaCentro">
+                <div class="imgFooter">
+                    <img id="Root MakeUp Logo" src="imagenes/logotransparente.png" loading="lazy">
+                    <p>Copyright © 2025 Root pro make up</p>
+                </div>
+            </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+</body>
+</html>

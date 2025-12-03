@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Root MakeUp: Aprende maquillaje profesional con cursos online, horarios flexibles y certificados digitales.">
+    <script src="https://kit.fontawesome.com/b76b6f41c6.js" crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    
+    <title><%= curso ? curso.titulo : 'Curso' %> | Root MakeUP</title>
+    <style>
+        .contenido-curso {
+            padding: 2rem 0;
+        }
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding-top: 56.25%; /* 16:9 */
+            background: #f5f5f5;
+            margin-bottom: 2rem;
+        }
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .info-curso {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        .info-curso h1 {
+            color: #333;
+            margin-bottom: 1rem;
+        }
+        .info-curso .meta {
+            color: #666;
+            margin-bottom: 2rem;
+        }
+        .tiempo-restante {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        .tiempo-restante strong {
+            color: #dc3545;
+        }
+        /* Reseñas */
+        .resenas-curso { max-width: 1000px; margin: 2rem auto; padding: 1rem; }
+        .resena { border-bottom: 1px solid #e6e6e6; padding: 0.75rem 0; }
+        .resena .meta { color: #666; font-size: 0.9rem; }
+        .resena .comentario { margin-top: 0.5rem; }
+        .resena-form textarea { width: 100%; min-height: 80px; margin-top: 0.5rem; }
+        .resena-form select, .resena-form button { margin-top: 0.5rem; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <img src="/imagenes/logotransparente.png" alt="Root Pro Make Up" loading="lazy">
+            </div>
+            <button class="menu-toggle" aria-label="Abrir menú">&#9776;</button>
+            <nav>
+                <ul class="content">
+                    <li><a href="/index1">Inicio</a></li>
+                    <li><a href="/cursos">Cursos</a></li>
+                    <li><a href="/servicios">Servicios</a></li>
+                    <li><a href="/sobremi">Sobre Mi</a></li>
+                    <li><a href="/contacto">Contacto</a></li>
+                    <li class="menu-cuenta">
+                        <a href="#">Mi cuenta <span class="arrow">▼</span></a>
+                        <ul id="submenu">
+                            <li><a href="/dashboard">Mi Perfil</a></li>
+                            <li><a href="/logout">Cerrar Sesión</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="contenido-curso">
+        <div class="container">
+            <div class="tiempo-restante">
+                <p>Tiempo restante de acceso: <strong><%= diasRestantes %> días</strong></p>
+                <a href="/dashboard" class="boton" style="display: inline-block; margin-top: 1rem; padding: 0.5rem 1rem; background-color: #4a4a4a; color: white; text-decoration: none; border-radius: 4px;">Volver a mis cursos</a>
+            </div>
+
+            <div class="info-curso">
+                <h1><%= curso ? curso.titulo : 'Curso sin título' %></h1>
+                <div class="meta">
+                    <% if (curso && curso.fechaCompra) { %>
+                        <p>Fecha de compra: <%= new Date(curso.fechaCompra).toLocaleDateString() %></p>
+                    <% } %>
+                    <% if (curso && curso.fechaExpiracion) { %>
+                        <p>Válido hasta: <%= new Date(curso.fechaExpiracion).toLocaleDateString() %></p>
+                    <% } %>
+                </div>
+            </div>
+
+            <div class="video-container">
+                <% if (curso && curso.videoUrl) { %>
+                    <iframe 
+                        src="<%= curso.videoUrl %>"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen>
+                    </iframe>
+                <% } else { %>
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                        <p>El video no está disponible en este momento.</p>
+                    </div>
+                <% } %>
+            </div>
+            
+            <% if (typeof diasRestantes !== 'undefined' && Number(diasRestantes) >= 0) { %>
+                <div style="text-align:center; margin-top:1rem;">
+                    <% const cid = (curso && (curso.id || curso.ID_CURSO)) ? (curso.id || curso.ID_CURSO) : ''; %>
+                    <a href="/certificado/descargar?cursoId=<%= cid %>" class="boton" id="btnDescargarCert">Descargar certificado</a>
+                </div>
+            <% } %>
+            
+            <!-- Meta curso (oculto) -->
+            <div id="curso-meta" data-curso-id="<%= (curso && (curso.id || curso.ID_CURSO)) ? (curso.id || curso.ID_CURSO) : '' %>" style="display:none"></div>
+
+            <!-- Sección de reseñas -->
+            <section class="resenas-curso">
+                <h2>Reseñas</h2>
+                <div id="resenas-list">Cargando reseñas...</div>
+
+                <div id="resena-form" class="resena-form">
+                    <h3>Dejar una reseña</h3>
+                    <label for="calificacion">Calificación:</label>
+                    <select id="calificacion">
+                        <option value="5">5 - Excelente</option>
+                        <option value="4">4 - Muy buena</option>
+                        <option value="3">3 - Buena</option>
+                        <option value="2">2 - Regular</option>
+                        <option value="1">1 - Mala</option>
+                    </select>
+                    <label for="comentario">Comentario:</label>
+                    <textarea id="comentario" placeholder="Escribe tu reseña aquí..."></textarea>
+                    <br>
+                    <button id="enviarResena" class="boton">Enviar reseña</button>
+                    <p id="resena-resultado" style="margin-top:.5rem"></p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="columnaVacia"></div>
+        <div class="columnaCentro">
+            <div class="imgFooter">
+                <img src="/imagenes/logotransparente.png" loading="lazy">
+                <p>Copyright © 2025 Root Pro Make Up</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/script.js"></script>
+    <script>
+        (function(){
+            const cursoMeta = document.getElementById('curso-meta');
+            const cursoId = cursoMeta && cursoMeta.dataset && cursoMeta.dataset.cursoId ? Number(cursoMeta.dataset.cursoId) : null;
+            const resenasList = document.getElementById('resenas-list');
+            const enviarBtn = document.getElementById('enviarResena');
+            const calificacionEl = document.getElementById('calificacion');
+            const comentarioEl = document.getElementById('comentario');
+            const resultadoEl = document.getElementById('resena-resultado');
+
+            function renderResenas(items){
+                if(!items || items.length === 0){
+                    resenasList.innerHTML = '<p>No hay reseñas todavía. Sé el primero en comentar.</p>';
+                    return;
+                }
+                const html = items.map(r=>{
+                    const nombre = (r.nombre || r.usuarioEmail || 'Usuario').toString();
+                    return `<div class="resena"><div class="meta"><strong>${nombre}</strong> · ${r.calificacion}/5</div><div class="comentario">${r.comentario || ''}</div></div>`;
+                }).join('');
+                resenasList.innerHTML = html;
+            }
+
+            async function cargarResenas(){
+                try{
+                    const resp = await fetch(`/api/cursos/${cursoId}/resenas`);
+                    if(!resp.ok) throw new Error('Error cargando reseñas');
+                    const data = await resp.json();
+                    renderResenas(data.resenas || []);
+                }catch(e){
+                    resenasList.innerHTML = '<p>Error al cargar reseñas.</p>';
+                    console.error(e);
+                }
+            }
+
+            async function enviarResena(){
+                resultadoEl.textContent = '';
+                try{
+                    const payload = { calificacion: calificacionEl.value, comentario: comentarioEl.value };
+                    const resp = await fetch(`/api/cursos/${cursoId}/resenas`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'same-origin',
+                        body: JSON.stringify(payload)
+                    });
+                    if(resp.status === 401 || resp.status === 403){
+                        resultadoEl.textContent = 'Debes iniciar sesión y tener acceso al curso para publicar una reseña.';
+                        return;
+                    }
+                    const data = await resp.json();
+                    if(!resp.ok){
+                        resultadoEl.textContent = data.error || 'Error al enviar reseña.';
+                        return;
+                    }
+                    resultadoEl.textContent = 'Reseña publicada con éxito.';
+                    comentarioEl.value = '';
+                    cargarResenas();
+                }catch(err){
+                    console.error(err);
+                    resultadoEl.textContent = 'Error al enviar reseña.';
+                }
+            }
+
+            if(cursoId === null || cursoId === 'null'){
+                resenasList.innerHTML = '<p>ID de curso inválido.</p>';
+            } else {
+                cargarResenas();
+            }
+
+            if(enviarBtn) enviarBtn.addEventListener('click', enviarResena);
+        })();
+    </script>
+</body>
+</html>

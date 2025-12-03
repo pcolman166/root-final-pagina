@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Root MakeUp: Aprende maquillaje profesional">
+    <script src="https://kit.fontawesome.com/b76b6f41c6.js" crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <title>Cursos | Root MakeUP</title>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <img id="Root MakeUp Logo" src="/imagenes/logotransparente.png" alt="Root Pro Make Up" loading="lazy">
+            </div>
+            <button class="menu-toggle" aria-label="Abrir menú">&#9776;</button>
+            <nav>
+                <ul class="content">
+                    <li><a href="/index1" id="page_item">Inicio</a></li>
+                    <li><a href="/cursos" id="page_item">Cursos</a></li>
+                    <li><a href="/servicios" id="page_item">Servicios</a></li>
+                    <li><a href="/sobremi" id="page_item">Sobre Mi</a></li>
+                    <li><a href="/contacto" id="page_item">Contacto</a></li>
+                    <li class="menu-cuenta">
+                        <a href="#" id="page_item">Mi Perfil <span class="arrow">▼</span></a>
+                        <ul id="submenu">
+                            <% if (typeof usuario !== 'undefined' && usuario) { %>
+                                <li class="submenu_item"><a href="/dashboard">Mi Panel</a></li>
+                                <li class="submenu_item"><a href="/logout">Cerrar Sesión</a></li>
+                            <% } else { %>
+                                <li class="submenu_item"><a href="/login">Iniciar Sesión</a></li>
+                                <li class="submenu_item"><a href="/login">Registrarse</a></li>
+                            <% } %>
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section id="cuerpo-cursos">
+        <div class="titulo-cursos">
+            <h2>Nuestros cursos</h2>
+            <p>En Root contamos con diversos cursos para diferentes ocasiones</p>
+        </div>
+
+        <div class="seccion-cursos">
+            <h2 id="cursos-disponibles">Cursos Disponibles</h2>
+            
+            <div class="pago">
+                <label for="moneda">Ver precios en:</label>
+                <select id="moneda">
+                    <option value="ars">Pesos (ARS)</option>
+                    <option value="usd">Dólares (USD)</option>
+                </select>
+            </div>
+            
+            <div class="cursos-grid">
+                <% if (typeof cursos !== 'undefined' && cursos.length > 0) { %>
+                    <% cursos.forEach(curso => { %>
+                        
+                        <% 
+                            // Valores por defecto
+                            let imagenCurso = 'novia.JPG';
+                            let descripcion = curso.DESCRIPCION; 
+                            let precioLista = (curso.PRECIO * 1.25).toFixed(0); // Precio falso tachado calculado
+                            let precioReal = curso.PRECIO;
+                            const nombre = curso.NOMBRE_CURSO.toUpperCase();
+                            
+                            // SI ES EL CURSO DE DÍA
+                            if (nombre.includes('DIA') || nombre.includes('DÍA')) {
+                                imagenCurso = 'MAQUILLAJE DE DIA.png';
+                                descripcion = "Domina los fundamentos del maquillaje natural para brillar cada día.";
+                                precioLista = "25.000";
+                                precioReal = "19.900";
+                            } 
+                            // SI ES EL CURSO DE NOCHE
+                            else if (nombre.includes('NOCHE')) {
+                                imagenCurso = 'MAQUILLAJE DE NOCHE.PNG';
+                                descripcion = "Aprende a crear looks impactantes y elegantes para tus noches especiales.";
+                                precioLista = "30.000";
+                                precioReal = "24.900";
+                            } 
+                            // SI ES EL CURSO ARTÍSTICO
+                            else if (nombre.includes('ARTISTICO') || nombre.includes('ARTÍSTICO')) {
+                                imagenCurso = 'artisticooooooooo.jpeg';
+                                descripcion = "Explora el maquillaje creativo y deslumbrante para destacar en cualquier carnaval.";
+                                precioLista = "30.000";
+                                precioReal = "24.900";
+                            }
+                        %>
+
+                        <div class="curso">
+                            <div class="curso-media">
+                                <img src="imagenes/<%= imagenCurso %>" alt="<%= curso.NOMBRE_CURSO %>">
+                                
+                                <div class="curso-overlay-detalle"> 
+                                    <p class="curso-descripcion"><%= descripcion %></p>
+                                    
+                                    <div class="precios-container">
+                                        <p class="curso-precios">
+                                            <span id="descuento" class="precio-ars">$<%= precioLista %></span>
+                                            <span class="precio-ars"><b>$<%= precioReal %></b></span>
+                                            
+                                            <span id="descuento" class="precio-usd" style="display:none;">USD 30</span>
+                                            <span class="precio-usd" style="display:none;"><b>USD 25</b></span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="curso-info-visible">
+                                <h4><%= curso.NOMBRE_CURSO %></h4>
+                                <a href="/generar?cursoId=<%= curso.ID_CURSO %>" class="boton">Inscribirme</a>
+                            </div>
+                        </div>
+                    <% }); %>
+                <% } else { %>
+                    <p style="text-align: center; width: 100%;">No hay cursos disponibles en este momento.</p>
+                <% } %>
+            </div>
+        </div>
+            
+        <div class="proximos-cursos">
+            <h2>Próximamente más cursos...</h2>
+        </div>
+    </section>
+    
+    <footer class="footer">
+        <div class="columnaVacia"></div>
+        <div class="columnaCentro">
+            <div class="imgFooter">
+                <img id="Root MakeUp Logo" src="/imagenes/logotransparente.png">
+                <p>Copyright © 2025 Root pro make up</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+</body>
+</html>
